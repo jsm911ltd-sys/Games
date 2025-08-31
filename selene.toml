@@ -1,1 +1,6 @@
-std = "roblox"
+std = "roblox+luau"
+
+[lints]
+unused_variable     = "allow"  # Selene stays quiet; Luau still reports if you want it
+unscoped_variables  = "deny"   # forbid accidental globals
+shadowing           = "warn"
