@@ -2,6 +2,7 @@
   // Use Rojo sourcemap so Luau knows the DataModel layout
   "luau-lsp.sourcemap.enabled": true,
   "luau-lsp.sourcemap.autogenerate": true,
+  "luau-lsp.sourcemap.rojoProjectFile": "${workspaceFolder}/default.project.json",
   "luau-lsp.sourcemap.path": "${workspaceFolder}/sourcemap.json",
   // Ignore vendored packages to avoid noisy diagnostics from Wally stubs
   "luau-lsp.workspace.ignoreGlobs": [
