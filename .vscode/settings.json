@@ -9,6 +9,15 @@
     "**/ServerPackages/**",
     "**/DevPackages/**"
   ],
+  // Stylua: use as default formatter and format on save
+  "[luau]": {
+    "editor.defaultFormatter": "JohnnyMorganz.stylua",
+    "editor.formatOnSave": true
+  },
+  "[lua]": {
+    "editor.defaultFormatter": "JohnnyMorganz.stylua",
+    "editor.formatOnSave": true
+  },
   // Prefer Luau Language Server; disable Roblox LSP if installed
   // (Uncomment the next line if you have Roblox LSP enabled and want to turn it off per-workspace)
   // "robloxLsp.enabled": false
