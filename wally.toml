@@ -9,4 +9,9 @@ Promise = "evaera/promise@^4.0.0"
 Networker = "leifstout/networker@0.3.0"
 
 [server-dependencies]
-Profileservice = "firebird702/profileservice@1.1.0"
+ProfileService = "firebird702/profileservice@1.1.0"
+DataService = "leifstout/dataservice@0.3.1"
+
+[place]
+shared-packages = "game.ReplicatedStorage.Packages"
+server-packages = "game.ServerScriptService.ServerPackages"
