@@ -20,6 +20,7 @@
     "editor.defaultFormatter": "JohnnyMorganz.stylua",
     "editor.formatOnSave": true
   },
+  "robloxLsp.enabled": false,
   // Prefer Luau Language Server; disable Roblox LSP if installed
   // (Uncomment the next line if you have Roblox LSP enabled and want to turn it off per-workspace)
   // "robloxLsp.enabled": false
