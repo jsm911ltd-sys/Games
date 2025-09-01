@@ -7,9 +7,10 @@ realm = "shared"
 [dependencies]
 Promise = "evaera/promise@^4.0.0"
 Networker = "leifstout/networker@0.3.0"
-loader = "sleitnick/loader@2.0.0"
+Loader = "sleitnick/loader@2.0.0"
 Fusion = "elttob/fusion@^0.3"
 Flipper = "reselim/flipper@^2"
+Janitor = "howmanysmall/janitor@^1.18.3"
 t = "osyrisrblx/t@^3"
 
 [server-dependencies]
