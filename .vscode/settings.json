@@ -1,0 +1,18 @@
+{
+  // Use Rojo sourcemap so Luau knows the DataModel layout
+  "luau-lsp.sourcemap.enabled": true,
+  "luau-lsp.sourcemap.autogenerate": false,
+  "luau-lsp.sourcemap.path": "${workspaceFolder}/sourcemap.json",
+
+  // Ignore vendored packages to avoid noisy diagnostics from Wally stubs
+  "luau-lsp.workspace.ignoreGlobs": [
+    "**/Packages/**",
+    "**/ServerPackages/**",
+    "**/DevPackages/**"
+  ],
+
+  // Prefer Luau Language Server; disable Roblox LSP if installed
+  // (Uncomment the next line if you have Roblox LSP enabled and want to turn it off per-workspace)
+  // "robloxLsp.enabled": false
+}
+
