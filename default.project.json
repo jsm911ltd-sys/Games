@@ -9,6 +9,9 @@
       },
       "Packages":{
         "$path": "Packages"
+      },
+      "FusionDev": {
+        "$path": "_tmp_Fusion/src"
       }
     },
 

@@ -4,12 +4,24 @@
   "luau-lsp.sourcemap.autogenerate": true,
   "luau-lsp.sourcemap.rojoProjectFile": "${workspaceFolder}/default.project.json",
   "luau-lsp.sourcemap.path": "${workspaceFolder}/sourcemap.json",
+  // Also keep VS Code from indexing this temp folder
+  "files.exclude": {
+    "_tmp_Fusion/**": true
+  },
+  "files.watcherExclude": {
+    "_tmp_Fusion/**": true,
+    "**/_tmp_Fusion/**": true
+  },
+  "search.exclude": {
+    "_tmp_Fusion/**": true
+  },
   // Ignore vendored packages to avoid noisy diagnostics from Wally stubs
   "luau-lsp.workspace.ignoreGlobs": [
     "**/Packages/**",
     "**/ServerPackages/**",
     "**/DevPackages/**",
-    "_tmp_Fusion/**"
+    "_tmp_Fusion/**",
+    "**/_tmp_Fusion/**"
   ],
   // Stylua: use as default formatter and format on save
   "[luau]": {
@@ -20,6 +32,13 @@
     "editor.defaultFormatter": "JohnnyMorganz.stylua",
     "editor.formatOnSave": true
   },
+  // If the generic Lua extension is installed, keep it quiet here
+  "Lua.workspace.ignoreDir": [
+    "Packages",
+    "ServerPackages",
+    "DevPackages",
+    "_tmp_Fusion"
+  ],
   "robloxLsp.enabled": false,
   // Prefer Luau Language Server; disable Roblox LSP if installed
   // (Uncomment the next line if you have Roblox LSP enabled and want to turn it off per-workspace)
