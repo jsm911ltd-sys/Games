@@ -10,4 +10,5 @@ exclude = [
   "Packages/**",
   "ServerPackages/**",
   "DevPackages/**",
+  "_tmp_Fusion/**",
 ]

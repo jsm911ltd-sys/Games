@@ -8,7 +8,8 @@
   "luau-lsp.workspace.ignoreGlobs": [
     "**/Packages/**",
     "**/ServerPackages/**",
-    "**/DevPackages/**"
+    "**/DevPackages/**",
+    "_tmp_Fusion/**"
   ],
   // Stylua: use as default formatter and format on save
   "[luau]": {
