@@ -3,7 +3,6 @@
 local Players = game:GetService("Players")
 
 local scope = require(script.Parent.Parent:WaitForChild("FusionScope"))
-local MouseRefresh = require(script.Parent:WaitForChild("MouseRefresh"))
 
 local function createApp(state)
   local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -137,8 +136,88 @@ local function createApp(state)
                       return use(state.count) > 0
                     end),
                     [scope.OnEvent("Activated")] = function()
-                      state.reset()
+                      state.openResetConfirm()
                     end,
+                  }),
+
+                  -- Confirm popover appears offset so the pointer must move
+                  scope:New("Frame")({
+                    Name = "ResetConfirm",
+                    ZIndex = 10,
+                    BackgroundColor3 = Color3.fromRGB(35, 35, 35),
+                    BorderSizePixel = 0,
+                    Visible = scope:Computed(function(use)
+                      return use(state.showResetConfirm)
+                    end),
+                    -- Offset above the button so the cursor is not already over it
+                    Position = UDim2.fromOffset(0, -52),
+                    Size = UDim2.fromOffset(160, 64),
+                    [scope.Children] = {
+                      scope:New("UICorner")({ CornerRadius = UDim.new(0, 6) }),
+                      scope:New("UIPadding")({
+                        PaddingTop = UDim.new(0, 8),
+                        PaddingBottom = UDim.new(0, 8),
+                        PaddingLeft = UDim.new(0, 8),
+                        PaddingRight = UDim.new(0, 8),
+                      }),
+                      scope:New("UIListLayout")({
+                        FillDirection = Enum.FillDirection.Vertical,
+                        SortOrder = Enum.SortOrder.LayoutOrder,
+                        Padding = UDim.new(0, 6),
+                      }),
+                      scope:New("TextLabel")({
+                        LayoutOrder = 0,
+                        BackgroundTransparency = 1,
+                        Size = UDim2.new(1, 0, 0, 20),
+                        Font = Enum.Font.Gotham,
+                        TextSize = 14,
+                        TextColor3 = Color3.new(1, 1, 1),
+                        TextXAlignment = Enum.TextXAlignment.Left,
+                        Text = "Confirm reset?",
+                      }),
+                      scope:New("Frame")({
+                        LayoutOrder = 1,
+                        BackgroundTransparency = 1,
+                        Size = UDim2.new(1, 0, 0, 28),
+                        [scope.Children] = {
+                          scope:New("UIListLayout")({
+                            FillDirection = Enum.FillDirection.Horizontal,
+                            SortOrder = Enum.SortOrder.LayoutOrder,
+                            Padding = UDim.new(0, 8),
+                          }),
+                          scope:New("TextButton")({
+                            Name = "Yes",
+                            LayoutOrder = 0,
+                            Size = UDim2.fromOffset(64, 28),
+                            BackgroundColor3 = Color3.fromRGB(200, 60, 60),
+                            BorderSizePixel = 0,
+                            Font = Enum.Font.Gotham,
+                            TextSize = 14,
+                            TextColor3 = Color3.new(1, 1, 1),
+                            Text = "Yes",
+                            [scope.OnEvent("Activated")] = function()
+                              state.confirmReset()
+                            end,
+                            [scope.Children] = { scope:New("UICorner")({ CornerRadius = UDim.new(0, 4) }) },
+                          }),
+                          scope:New("TextButton")({
+                            Name = "No",
+                            LayoutOrder = 1,
+                            Size = UDim2.fromOffset(64, 28),
+                            BackgroundColor3 = Color3.fromRGB(80, 80, 80),
+                            BorderSizePixel = 0,
+                            Font = Enum.Font.Gotham,
+                            TextSize = 14,
+                            TextColor3 = Color3.new(1, 1, 1),
+                            Text = "No",
+                            [scope.OnEvent("Activated")] = function()
+                              state.cancelResetConfirm()
+                            end,
+                            [scope.Children] = { scope:New("UICorner")({ CornerRadius = UDim.new(0, 4) }) },
+                          }),
+                        },
+                      }),
+                    },
                   }),
                 },
               }),
@@ -150,13 +229,6 @@ local function createApp(state)
 
     Parent = playerGui,
   })
-
-  -- If count drops to 0 while hovering, nudge the mouse to refresh the cursor.
-  scope.Observer(scope, state.count):onChange(function()
-    if scope.peek(state.count) == 0 then
-      MouseRefresh.nudge()
-    end
-  end)
 
   return app
 end
