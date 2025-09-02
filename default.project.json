@@ -9,9 +9,7 @@
       },
       "Packages":{
         "$path": "Packages"
-      },
-      
-    },
+      }},
 
     "ServerScriptService": {
       "Server": {
