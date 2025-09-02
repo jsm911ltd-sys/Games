@@ -3,6 +3,7 @@
 local Players = game:GetService("Players")
 
 local scope = require(script.Parent.Parent:WaitForChild("FusionScope"))
+local MouseRefresh = require(script.Parent:WaitForChild("MouseRefresh"))
 
 local function createApp(state)
   local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -149,6 +150,13 @@ local function createApp(state)
 
     Parent = playerGui,
   })
+
+  -- If count drops to 0 while hovering, nudge the mouse to refresh the cursor.
+  scope.Observer(scope, state.count):onChange(function()
+    if scope.peek(state.count) == 0 then
+      MouseRefresh.nudge()
+    end
+  end)
 
   return app
 end
