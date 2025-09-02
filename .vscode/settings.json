@@ -2,7 +2,7 @@
   // Use Rojo sourcemap so Luau knows the DataModel layout
   "luau-lsp.sourcemap.enabled": true,
   "luau-lsp.sourcemap.autogenerate": true,
-  "luau-lsp.sourcemap.rojoProjectFile": "${workspaceFolder}/default.project.json",
+  "luau-lsp.sourcemap.rojoProjectFile": "default.project.json",
   "luau-lsp.sourcemap.path": "${workspaceFolder}/sourcemap.json",
   // Also keep VS Code from indexing this temp folder
   "files.exclude": {
