@@ -31,6 +31,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Dev: Quiet Vendor Lints",
+      "type": "shell",
+      "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/quiet-vendor.ps1",
+      "group": "none",
+      "problemMatcher": []
+    },
+    {
       "label": "Stylua: Format Workspace",
       "type": "shell",
       "command": "stylua .",
@@ -39,4 +46,3 @@
     }
   ]
 }
-
