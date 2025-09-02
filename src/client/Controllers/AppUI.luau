@@ -1,6 +1,7 @@
 --!strict
 
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 local scope = require(script.Parent:WaitForChild("FusionScope"))
 
 local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -8,6 +9,16 @@ local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 -- Small reactive state (no events yet)
 local count = scope:Value(0)
 local showButtons = scope:Value(true)
+
+-- When count becomes 0 while the mouse is already hovering the button,
+-- force a quick cursor refresh so the icon updates immediately.
+scope.Observer(scope, count):onChange(function()
+    if scope.peek(count) == 0 then
+        local old = UserInputService.MouseIconEnabled
+        UserInputService.MouseIconEnabled = not old
+        UserInputService.MouseIconEnabled = old
+    end
+end)
 
 -- Minimal UI: one ScreenGui with a single TextLabel
 local app = scope:New("ScreenGui") {
@@ -114,24 +125,42 @@ local app = scope:New("ScreenGui") {
                             },
                         },
 
-                        scope:New("TextButton") {
-                            Name = "ResetButton",
+                        -- Reset as a container frame with a transparent hit target when enabled
+                        scope:New("Frame") {
+                            Name = "Reset",
                             LayoutOrder = 2,
                             Size = UDim2.fromOffset(140, 36),
-                            BackgroundColor3 = Color3.fromRGB(80, 80, 80),
+                            BackgroundColor3 = scope:Computed(function(use)
+                                return (use(count) > 0) and Color3.fromRGB(80, 80, 80) or Color3.fromRGB(60, 60, 60)
+                            end),
                             BorderSizePixel = 0,
 
-                            Font = Enum.Font.Gotham,
-                            TextSize = 16,
-                            TextColor3 = Color3.new(1, 1, 1),
-                            Text = "Reset",
-
-                            [scope.OnEvent("Activated")] = function()
-                                count:set(0)
-                            end,
                             [scope.Children] = {
                                 scope:New("UICorner") {
                                     CornerRadius = UDim.new(0, 6),
+                                },
+                                scope:New("TextLabel") {
+                                    BackgroundTransparency = 1,
+                                    Size = UDim2.fromScale(1, 1),
+                                    Font = Enum.Font.Gotham,
+                                    TextSize = 16,
+                                    TextColor3 = Color3.new(1, 1, 1),
+                                    TextXAlignment = Enum.TextXAlignment.Center,
+                                    TextYAlignment = Enum.TextYAlignment.Center,
+                                    Text = "Reset",
+                                },
+                                scope:New("TextButton") {
+                                    Name = "HitTarget",
+                                    BackgroundTransparency = 1,
+                                    AutoButtonColor = false,
+                                    ZIndex = 2,
+                                    Size = UDim2.fromScale(1, 1),
+                                    Visible = scope:Computed(function(use)
+                                        return use(count) > 0
+                                    end),
+                                    [scope.OnEvent("Activated")] = function()
+                                        count:set(0)
+                                    end,
                                 },
                             },
                         },
