@@ -19,4 +19,4 @@ DataService = "leifstout/dataservice@0.3.1"
 
 [place]
 shared-packages = "game.ReplicatedStorage.Packages"
-server-packages = "game.ServerScriptService.ServerPackages"
+server-packages = "game.ServerStorage.ServerPackages"

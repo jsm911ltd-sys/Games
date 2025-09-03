@@ -1,13 +1,11 @@
---!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Require Loader from shared Packages
 local Packages = ReplicatedStorage:WaitForChild("Packages")
--- Wally wrapper names match the key in wally.toml (case-sensitive).
--- Your dependency key is "loader", so the wrapper is likely "loader" not "Loader".
+-- Wrapper name matches the dependency key in wally.toml (case-sensitive).
 local loaderModule = Packages:FindFirstChild("Loader") or Packages:FindFirstChild("loader")
 if not loaderModule then
-    error("Loader package not found under ReplicatedStorage.Packages (expected 'Loader' or 'loader'). Did you run 'wally install' and connect Rojo?")
+  error("Loader package not found under ReplicatedStorage.Packages (expected 'Loader' or 'loader'). Did you run 'wally install' and connect Rojo?")
 end
 local Loader = require(loaderModule)
 
@@ -16,7 +14,7 @@ local Loader = require(loaderModule)
 local root = script.Parent
 local controllers = root:FindFirstChild("Controllers")
 if controllers then
-    Loader.LoadDescendants(controllers)
+  Loader.LoadDescendants(controllers)
 else
-    Loader.LoadDescendants(root)
+  Loader.LoadDescendants(root)
 end
