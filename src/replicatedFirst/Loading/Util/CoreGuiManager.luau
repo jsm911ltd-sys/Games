@@ -32,12 +32,9 @@ function CoreGuiManager.apply()
       StarterGui:SetCoreGuiEnabled(t, false)
     end)
   end
-  -- Minimal SetCore tweaks
-  pcall(function()
-    StarterGui:SetCore("TopbarEnabled", false)
-    StarterGui:SetCore("BadgesNotificationsActive", false)
-    StarterGui:SetCore("PointsNotificationsActive", false)
-  end)
+  -- Avoid SetCore calls that can spam selection groups or
+  -- interfere with mouse behavior in Studio. Keep Topbar
+  -- and notifications as-is during the loader.
   applied = true
 end
 
@@ -53,11 +50,7 @@ function CoreGuiManager.restore()
       StarterGui:SetCoreGuiEnabled(t, true)
     end)
   end
-  pcall(function()
-    StarterGui:SetCore("TopbarEnabled", true)
-    StarterGui:SetCore("BadgesNotificationsActive", true)
-    StarterGui:SetCore("PointsNotificationsActive", true)
-  end)
+  -- Nothing to restore here since we didn't alter SetCore flags.
   applied = false
 end
 
