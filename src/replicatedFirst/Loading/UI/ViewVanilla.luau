@@ -5,6 +5,9 @@
 
 local Config = require(script.Parent.Parent.Core.Config)
 local Theme = require(script.Parent.Theme)
+local GridMath = require(script.Parent.Parent.Util.GridMath)
+local FillOrder = require(script.Parent.Parent.Util.FillOrder)
+local TileStyler = require(script.Parent.TileStyler)
 
 export type View = {
   mount: (self: View, parent: Instance) -> (),
@@ -14,11 +17,7 @@ export type View = {
   destroy: (self: View) -> (),
 }
 
-type Tile = {
-  frame: Frame,
-  stroke: UIStroke,
-  corner: UICorner,
-}
+type Tile = TileStyler.Tile
 
 local ViewImpl = {}
 ViewImpl.__index = ViewImpl
@@ -36,37 +35,7 @@ local function createInstance<T>(className: string, props: { [string]: any }, ch
   return inst
 end
 
-local function computeGrid(containerSize: Vector2)
-  local gridCfg = Config.grid
-  local minPx = math.max(6, gridCfg.minCellPx)
-  local gutter = gridCfg.gutterPx
-  local cols = math.floor(containerSize.X / (minPx + gutter))
-  local rows = math.floor(containerSize.Y / (minPx + gutter))
-  cols = math.clamp(cols, 12, gridCfg.maxCols)
-  rows = math.clamp(rows, 8, gridCfg.maxRows)
-
-  local maxTiles = gridCfg.maxTiles or (gridCfg.maxCols * gridCfg.maxRows)
-  local total = cols * rows
-  if total > maxTiles then
-    local scale = math.sqrt(total / maxTiles)
-    cols = math.max(1, math.floor(cols / scale))
-    rows = math.max(1, math.floor(rows / scale))
-  end
-
-  return cols, rows
-end
-
-local function sampleGradientColor(normPos: Vector2): Color3
-  local theme = Theme.get()
-  local t = math.clamp((normPos.X + normPos.Y) * 0.5, 0, 1)
-  if t <= 0.5 then
-    local a = t * 2
-    return theme.accent:Lerp(theme.primary, a)
-  else
-    local a = (t - 0.5) * 2
-    return theme.primary:Lerp(theme.accent, a)
-  end
-end
+-- Grid math and gradient are provided by Util modules
 
 function ViewImpl.new(): View
   local self = setmetatable({}, ViewImpl) :: any
@@ -131,6 +100,7 @@ function ViewImpl:mount(parent: Instance)
     ZIndex = 1,
     Size = UDim2.fromScale(1, 1),
     ClipsDescendants = true,
+    Visible = false,
   }) :: Frame
   gridFrame.Parent = root
 
@@ -178,6 +148,15 @@ function ViewImpl:mount(parent: Instance)
 
   -- Build initial grid based on size
   self:_rebuildGrid(gridFrame)
+  -- Apply initial unloaded styling before reveal
+  do
+    local s2 = self :: any
+    local tiles = s2._tiles :: { Tile }
+    for i = 1, #tiles do
+      TileStyler.setUnloaded(tiles[i], i)
+    end
+    gridFrame.Visible = true
+  end
 
   -- Delayed show skip
   if Config.skip.enabled then
@@ -227,44 +206,17 @@ function ViewImpl:_clearTiles()
   s._tiles = {}
 end
 
-local function buildFillOrder(cols: number, rows: number): { number }
-  -- Blue-noise-ish ordering via integer hash to avoid row/column banding
-  local total = cols * rows
-  local pairsArr = table.create(total)
-  local idx = 1
-  for r = 1, rows do
-    for c = 1, cols do
-      local x = c + 12345
-      local y = r + 54321
-      local n = bit32.bxor(x, bit32.lshift(y, 16))
-      n = bit32.bxor(n, bit32.rshift(n, 13))
-      n = (n * 0x45D9F3B) % 0x10000000
-      n = bit32.bxor(n, bit32.rshift(n, 13))
-      n = (n * 0x45D9F3B) % 0x10000000
-      n = bit32.bxor(n, bit32.rshift(n, 16))
-      local key = (n % 1000003) / 1000003
-      pairsArr[idx] = { key = key, i = ((r - 1) * cols + c) }
-      idx += 1
-    end
-  end
-  table.sort(pairsArr, function(a, b)
-    return a.key < b.key
-  end)
-  local order = table.create(total)
-  for i = 1, total do
-    order[i] = pairsArr[i].i
-  end
-  return order
-end
+-- Fill order provided by Util.FillOrder
 
 function ViewImpl:_rebuildGrid(gridFrame: Frame)
   self:_clearTiles()
   local theme = Theme.get()
-  local cols, rows = computeGrid(gridFrame.AbsoluteSize)
+  local res = GridMath.compute(gridFrame.AbsoluteSize)
+  local cols, rows = res.cols, res.rows
   local s = self :: any
   s._cols = cols
   s._rows = rows
-  s._order = buildFillOrder(cols, rows)
+  s._order = FillOrder.get(cols, rows)
 
   -- Pre-create tiles row-major for deterministic mapping
   local tiles = {} :: { Tile }
@@ -285,7 +237,7 @@ function ViewImpl:_rebuildGrid(gridFrame: Frame)
   for i = 1, total do
     local f = Instance.new("Frame")
     f.ZIndex = 1
-    f.BackgroundColor3 = if i % 2 == 0 then theme.unloadedA else theme.unloadedB
+    f.BackgroundColor3 = theme.unloadedB
     f.BorderSizePixel = 0
     f.Name = string.format("Tile_%d", i)
     f.LayoutOrder = i
@@ -301,7 +253,13 @@ function ViewImpl:_rebuildGrid(gridFrame: Frame)
     stroke.Parent = f
 
     f.Parent = gridFrame
-    tiles[i] = { frame = f, stroke = stroke, corner = corner }
+    local col = ((i - 1) % cols) + 1
+    local row = math.floor((i - 1) / cols) + 1
+    tiles[i] = { frame = f, stroke = stroke, corner = corner, col = col, row = row }
+    -- Chunked yield to avoid long stalls on huge grids
+    if i % 1200 == 0 then
+      task.wait()
+    end
   end
 
   s._tiles = tiles
@@ -330,27 +288,13 @@ function ViewImpl:setProgress(p: number)
   if last < 0 or last > total then
     last = 0
   end
-  local gridAbsPos = (s._grid :: Frame).AbsolutePosition
-  local gridAbsSize = (s._grid :: Frame).AbsoluteSize
   local function setLoaded(idx: number)
     local t = tiles[idx]
-    t.stroke.Transparency = 1
-    t.corner.CornerRadius = UDim.new(0, 0)
-    t.frame.BackgroundTransparency = 0
-    -- Sample gradient at tile center in normalized grid space
-    local center = t.frame.AbsolutePosition + t.frame.AbsoluteSize * 0.5
-    local norm = Vector2.new(
-      if gridAbsSize.X > 0 then (center.X - gridAbsPos.X) / gridAbsSize.X else 0.5,
-      if gridAbsSize.Y > 0 then (center.Y - gridAbsPos.Y) / gridAbsSize.Y else 0.5
-    )
-    t.frame.BackgroundColor3 = sampleGradientColor(norm)
+    TileStyler.setLoaded(t, s._grid :: Frame)
   end
   local function setUnloaded(idx: number)
     local t = tiles[idx]
-    t.stroke.Transparency = Theme.get().strokeTransparency
-    t.corner.CornerRadius = UDim.new(Theme.get().cornerRadius, 0)
-    t.frame.BackgroundTransparency = 0
-    t.frame.BackgroundColor3 = if idx % 2 == 0 then theme.unloadedA else theme.unloadedB
+    TileStyler.setUnloaded(t, idx)
   end
 
   if not order then

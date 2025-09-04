@@ -67,11 +67,11 @@ local Config: Config = {
     strokeTransparency = 0.7,
   },
   grid = {
-    minCellPx = 4, -- smaller target size for very dense grid
+    minCellPx = 2, -- ultra-dense tiles
     gutterPx = 0,
     maxCols = 256,
     maxRows = 144,
-    maxTiles = 12000, -- soft cap; tune for performance
+    maxTiles = 20000, -- soft cap; tune for performance
   },
   skip = {
     enabled = true,
