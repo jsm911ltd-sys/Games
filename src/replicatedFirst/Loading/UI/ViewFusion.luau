@@ -15,7 +15,7 @@ export type View = {
   destroy: (self: View) -> (),
 }
 
-type Tile = { frame: Frame, stroke: UIStroke }
+type Tile = { frame: Frame, stroke: UIStroke, corner: UICorner }
 
 local ViewImpl = {}
 ViewImpl.__index = ViewImpl
@@ -40,16 +40,39 @@ local function computeGrid(containerSize: Vector2)
   return cols, rows
 end
 
+local function sampleGradientColor(normPos: Vector2): Color3
+  local theme = Theme.get()
+  local t = math.clamp((normPos.X + normPos.Y) * 0.5, 0, 1)
+  if t <= 0.5 then
+    local a = t * 2
+    return theme.accent:Lerp(theme.primary, a)
+  else
+    local a = (t - 0.5) * 2
+    return theme.primary:Lerp(theme.accent, a)
+  end
+end
+
 local function buildFillOrder(cols: number, rows: number): { number }
   local total = cols * rows
+  local pairsArr = table.create(total)
+  local idx = 1
+  local function prng(x: number, y: number): number
+    local s = math.sin(x * 12.9898 + y * 78.233) * 43758.5453
+    return s - math.floor(s)
+  end
+  for r = 1, rows do
+    for c = 1, cols do
+      local key = prng(c, r)
+      pairsArr[idx] = { key = key, i = ((r - 1) * cols + c) }
+      idx += 1
+    end
+  end
+  table.sort(pairsArr, function(a, b)
+    return a.key < b.key
+  end)
   local order = table.create(total)
   for i = 1, total do
-    order[i] = i
-  end
-  local rng = Random.new(314159)
-  for i = total, 2, -1 do
-    local j = rng:NextInteger(1, i)
-    order[i], order[j] = order[j], order[i]
+    order[i] = pairsArr[i].i
   end
   return order
 end
@@ -106,9 +129,9 @@ function ViewImpl:mount(parent: Instance)
     local grad = Instance.new("UIGradient")
     grad.Rotation = 45
     grad.Color = ColorSequence.new({
-      ColorSequenceKeypoint.new(0, theme.unloadedB),
-      ColorSequenceKeypoint.new(0.5, theme.bgColor:lerp(theme.unloadedA, 0.5)),
-      ColorSequenceKeypoint.new(1, theme.unloadedB),
+      ColorSequenceKeypoint.new(0, Theme.get().accent),
+      ColorSequenceKeypoint.new(0.5, Theme.get().primary),
+      ColorSequenceKeypoint.new(1, Theme.get().accent),
     })
     grad.Parent = root
   end
@@ -212,20 +235,14 @@ function ViewImpl:_rebuildGridFusion(gridFrame: Frame)
   s._order = buildFillOrder(cols, rows)
 
   local layout = Instance.new("UIGridLayout")
-  layout.CellPadding = UDim2.fromOffset(Config.grid.gutterPx, Config.grid.gutterPx)
+  layout.CellPadding = UDim2.fromOffset(0, 0)
   layout.FillDirectionMaxCells = cols
   layout.FillDirection = Enum.FillDirection.Horizontal
-  layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-  layout.VerticalAlignment = Enum.VerticalAlignment.Center
+  layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+  layout.VerticalAlignment = Enum.VerticalAlignment.Top
   layout.SortOrder = Enum.SortOrder.LayoutOrder
+  layout.CellSize = UDim2.fromScale(1 / cols, 1 / rows)
   layout.Parent = gridFrame
-
-  local cellSizePxX =
-    math.floor((gridFrame.AbsoluteSize.X - math.max(0, cols - 1) * Config.grid.gutterPx) / math.max(1, cols))
-  local cellSizePxY =
-    math.floor((gridFrame.AbsoluteSize.Y - math.max(0, rows - 1) * Config.grid.gutterPx) / math.max(1, rows))
-  local cellPx = math.max(4, math.floor(math.min(cellSizePxX, cellSizePxY)))
-  layout.CellSize = UDim2.fromOffset(cellPx, cellPx)
 
   local tiles = {} :: { Tile }
   local total = cols * rows
@@ -250,10 +267,11 @@ function ViewImpl:_rebuildGridFusion(gridFrame: Frame)
     stroke.Parent = f
 
     f.Parent = gridFrame
-    tiles[i] = { frame = f, stroke = stroke }
+    tiles[i] = { frame = f, stroke = stroke, corner = corner }
   end
 
   s._tiles = tiles
+  s._lastLoaded = 0
 end
 
 function ViewImpl:setProgress(p: number)
@@ -277,35 +295,47 @@ function ViewImpl:setProgress(p: number)
   if last < 0 or last > total then
     last = 0
   end
+  local gridAbsPos = (s._grid :: Frame).AbsolutePosition
+  local gridAbsSize = (s._grid :: Frame).AbsoluteSize
+  local function setLoaded(idx: number)
+    local t = tiles[idx]
+    t.stroke.Transparency = 1
+    t.corner.CornerRadius = UDim.new(0, 0)
+    t.frame.BackgroundTransparency = 0
+    local center = t.frame.AbsolutePosition + t.frame.AbsoluteSize * 0.5
+    local norm = Vector2.new(
+      if gridAbsSize.X > 0 then (center.X - gridAbsPos.X) / gridAbsSize.X else 0.5,
+      if gridAbsSize.Y > 0 then (center.Y - gridAbsPos.Y) / gridAbsSize.Y else 0.5
+    )
+    t.frame.BackgroundColor3 = sampleGradientColor(norm)
+  end
+  local function setUnloaded(idx: number)
+    local t = tiles[idx]
+    t.stroke.Transparency = Theme.get().strokeTransparency
+    t.corner.CornerRadius = UDim.new(Theme.get().cornerRadius, 0)
+    t.frame.BackgroundTransparency = 0
+    t.frame.BackgroundColor3 = if idx % 2 == 0 then theme.unloadedA else theme.unloadedB
+  end
+
   if not order then
     if loaded < last then
       for i = loaded + 1, last do
-        local t = tiles[i]
-        t.frame.BackgroundTransparency = 0
-        t.frame.BackgroundColor3 = if i % 2 == 0 then theme.unloadedA else theme.unloadedB
-        t.stroke.Transparency = Theme.get().strokeTransparency
+        setUnloaded(i)
       end
     end
     for i = last + 1, loaded do
-      local t = tiles[i]
-      t.frame.BackgroundTransparency = 1
-      t.stroke.Transparency = 1
+      setLoaded(i)
     end
   else
     if loaded < last then
       for k = loaded + 1, last do
         local idx = (order :: any)[k]
-        local t = tiles[idx]
-        t.frame.BackgroundTransparency = 0
-        t.frame.BackgroundColor3 = if idx % 2 == 0 then theme.unloadedA else theme.unloadedB
-        t.stroke.Transparency = Theme.get().strokeTransparency
+        setUnloaded(idx)
       end
     end
     for k = last + 1, loaded do
       local idx = (order :: any)[k]
-      local t = tiles[idx]
-      t.frame.BackgroundTransparency = 1
-      t.stroke.Transparency = 1
+      setLoaded(idx)
     end
   end
   s._lastLoaded = loaded

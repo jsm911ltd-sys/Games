@@ -4,6 +4,7 @@
 
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
 
 local Config = require(script.Parent.Core.Config)
 local Aggregator = require(script.Parent.Core.ProgressAggregator)
@@ -33,6 +34,10 @@ if not mounted then
   view = ViewVanilla.new()
   view:mount(playerGui)
 end
+-- Hide default CoreGui (chat, player list, etc.) while loading
+pcall(function()
+  StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+end)
 pcall(function()
   ReplicatedFirst:RemoveDefaultLoadingScreen()
 end)
@@ -72,6 +77,10 @@ if Config.demo.enabled and RunService:IsStudio() then
   end
   -- For step 1, simple fade-out; flip-wave will be added next step
   task.delay(0.1, function()
+    -- Re-enable default CoreGui
+    pcall(function()
+      StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
+    end)
     view:destroy()
   end)
 end
