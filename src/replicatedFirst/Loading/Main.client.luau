@@ -37,6 +37,11 @@ end
 -- Hide default CoreGui (chat, player list, etc.) while loading
 pcall(function()
   StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+  -- Extra cores for topbar/dropdowns/notifications
+  StarterGui:SetCore("TopbarEnabled", false)
+  StarterGui:SetCore("BadgesNotificationsActive", false)
+  StarterGui:SetCore("PointsNotificationsActive", false)
+  StarterGui:SetCore("ResetButtonCallback", false)
 end)
 pcall(function()
   ReplicatedFirst:RemoveDefaultLoadingScreen()
@@ -80,6 +85,10 @@ if Config.demo.enabled and RunService:IsStudio() then
     -- Re-enable default CoreGui
     pcall(function()
       StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
+      StarterGui:SetCore("TopbarEnabled", true)
+      StarterGui:SetCore("BadgesNotificationsActive", true)
+      StarterGui:SetCore("PointsNotificationsActive", true)
+      StarterGui:SetCore("ResetButtonCallback", true)
     end)
     view:destroy()
   end)

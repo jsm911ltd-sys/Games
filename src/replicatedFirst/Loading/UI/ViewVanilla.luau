@@ -228,17 +228,21 @@ function ViewImpl:_clearTiles()
 end
 
 local function buildFillOrder(cols: number, rows: number): { number }
-  -- Spatially stratified ordering using a deterministic hash per (x,y)
+  -- Blue-noise-ish ordering via integer hash to avoid row/column banding
   local total = cols * rows
   local pairsArr = table.create(total)
   local idx = 1
-  local function prng(x: number, y: number): number
-    local s = math.sin(x * 12.9898 + y * 78.233) * 43758.5453
-    return s - math.floor(s)
-  end
   for r = 1, rows do
     for c = 1, cols do
-      local key = prng(c, r)
+      local x = c + 12345
+      local y = r + 54321
+      local n = bit32.bxor(x, bit32.lshift(y, 16))
+      n = bit32.bxor(n, bit32.rshift(n, 13))
+      n = (n * 0x45D9F3B) % 0x10000000
+      n = bit32.bxor(n, bit32.rshift(n, 13))
+      n = (n * 0x45D9F3B) % 0x10000000
+      n = bit32.bxor(n, bit32.rshift(n, 16))
+      local key = (n % 1000003) / 1000003
       pairsArr[idx] = { key = key, i = ((r - 1) * cols + c) }
       idx += 1
     end
