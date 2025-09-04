@@ -36,6 +36,25 @@
       "command": "stylua .",
       "group": "none",
       "problemMatcher": []
+    },
+    {
+      "label": "Selene: Lint",
+      "type": "shell",
+      "command": "selene .",
+      "group": "test",
+      "problemMatcher": [
+        {
+          "owner": "selene",
+          "fileLocation": ["relative", "${workspaceFolder}"],
+          "pattern": {
+            "regexp": "^(.*):(\\d+):(\\d+):\\s*(.*)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "message": 4
+          }
+        }
+      ]
     }
   ]
 }
