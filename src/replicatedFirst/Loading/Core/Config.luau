@@ -16,6 +16,7 @@ export type GridConfig = {
   gutterPx: number,
   maxCols: number,
   maxRows: number,
+  maxTiles: number?,
 }
 
 export type SkipConfig = {
@@ -66,10 +67,11 @@ local Config: Config = {
     strokeTransparency = 0.7,
   },
   grid = {
-    minCellPx = 28,
-    gutterPx = 2,
-    maxCols = 28,
-    maxRows = 16,
+    minCellPx = 6, -- much smaller cells to increase density significantly
+    gutterPx = 0,
+    maxCols = 80,
+    maxRows = 48,
+    maxTiles = 2400, -- soft cap for performance; scales down if exceeded
   },
   skip = {
     enabled = true,

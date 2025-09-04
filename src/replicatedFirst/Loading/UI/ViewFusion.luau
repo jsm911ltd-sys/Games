@@ -22,13 +22,36 @@ ViewImpl.__index = ViewImpl
 
 local function computeGrid(containerSize: Vector2)
   local gridCfg = Config.grid
-  local minPx = math.max(8, gridCfg.minCellPx)
+  local minPx = math.max(6, gridCfg.minCellPx)
   local gutter = gridCfg.gutterPx
-  local cols = math.clamp(math.floor(containerSize.X / (minPx + gutter)), 12, gridCfg.maxCols)
-  local rows = math.clamp(math.floor(containerSize.Y / (minPx + gutter)), 8, gridCfg.maxRows)
-  cols = math.max(1, cols)
-  rows = math.max(1, rows)
+  local cols = math.floor(containerSize.X / (minPx + gutter))
+  local rows = math.floor(containerSize.Y / (minPx + gutter))
+  cols = math.clamp(cols, 12, gridCfg.maxCols)
+  rows = math.clamp(rows, 8, gridCfg.maxRows)
+
+  local maxTiles = gridCfg.maxTiles or (gridCfg.maxCols * gridCfg.maxRows)
+  local total = cols * rows
+  if total > maxTiles then
+    local scale = math.sqrt(total / maxTiles)
+    cols = math.max(1, math.floor(cols / scale))
+    rows = math.max(1, math.floor(rows / scale))
+  end
+
   return cols, rows
+end
+
+local function buildFillOrder(cols: number, rows: number): { number }
+  local total = cols * rows
+  local order = table.create(total)
+  for i = 1, total do
+    order[i] = i
+  end
+  local rng = Random.new(314159)
+  for i = total, 2, -1 do
+    local j = rng:NextInteger(1, i)
+    order[i], order[j] = order[j], order[i]
+  end
+  return order
 end
 
 function ViewImpl.new(): View
@@ -41,6 +64,7 @@ function ViewImpl.new(): View
   s._tiles = {} :: { Tile }
   s._cols = 0
   s._rows = 0
+  s._order = nil :: { number }?
   s._skipBtn = nil :: TextButton?
   s._statusLabel = nil :: TextLabel?
   s._progress = 0
@@ -76,6 +100,17 @@ function ViewImpl:mount(parent: Instance)
     Size = UDim2.fromScale(1, 1),
     Parent = gui,
   })
+
+  do
+    local grad = Instance.new("UIGradient")
+    grad.Rotation = 45
+    grad.Color = ColorSequence.new({
+      ColorSequenceKeypoint.new(0, theme.unloadedB),
+      ColorSequenceKeypoint.new(0.5, theme.bgColor:lerp(theme.unloadedA, 0.5)),
+      ColorSequenceKeypoint.new(1, theme.unloadedB),
+    })
+    grad.Parent = root
+  end
 
   local overlay = New("Frame")({
     Name = "Overlay",
@@ -173,6 +208,7 @@ function ViewImpl:_rebuildGridFusion(gridFrame: Frame)
   local cols, rows = computeGrid(gridFrame.AbsoluteSize)
   s._cols = cols
   s._rows = rows
+  s._order = buildFillOrder(cols, rows)
 
   local layout = Instance.new("UIGridLayout")
   layout.CellPadding = UDim2.fromOffset(Config.grid.gutterPx, Config.grid.gutterPx)
@@ -231,13 +267,29 @@ function ViewImpl:setProgress(p: number)
   if total == 0 then
     return
   end
-  local loaded = math.floor(s._progress * total + 0.5)
-  for i = 1, total do
-    local f = tiles[i].frame
-    if i <= loaded then
-      f.BackgroundColor3 = theme.primary
-    else
+  local loaded = math.floor(s._progress * total)
+  local order = s._order :: { number }?
+  if not order or #order ~= total then
+    order = nil
+  end
+  if order then
+    for i = 1, total do
+      local f = tiles[i].frame
       f.BackgroundColor3 = if i % 2 == 0 then theme.unloadedA else theme.unloadedB
+    end
+    for k = 1, loaded do
+      local idx = order[k]
+      local f = tiles[idx].frame
+      f.BackgroundColor3 = theme.primary
+    end
+  else
+    for i = 1, total do
+      local f = tiles[i].frame
+      if i <= loaded then
+        f.BackgroundColor3 = theme.primary
+      else
+        f.BackgroundColor3 = if i % 2 == 0 then theme.unloadedA else theme.unloadedB
+      end
     end
   end
 end
