@@ -5,6 +5,7 @@
 
 local Config = require(script.Parent.Parent.Core.Config)
 local Theme = require(script.Parent.Theme)
+local RunService = game:GetService("RunService")
 local GridMath = require(script.Parent.Parent.Util.GridMath)
 local FillOrder = require(script.Parent.Parent.Util.FillOrder)
 local TileStyler = require(script.Parent.TileStyler)
@@ -153,6 +154,13 @@ function ViewImpl:mount(parent: Instance)
     corner.Parent = skipBtn
   end
 
+  -- Wait for a non-zero size to avoid tiny top-left grid
+  do
+    local deadline = os.clock() + 1
+    while (gridFrame.AbsoluteSize.X < 2 or gridFrame.AbsoluteSize.Y < 2) and os.clock() < deadline do
+      RunService.Heartbeat:Wait()
+    end
+  end
   -- Build initial grid
   self:_rebuildGridFusion(gridFrame)
   -- Apply initial unloaded styling before reveal
@@ -214,38 +222,67 @@ function ViewImpl:_rebuildGridFusion(gridFrame: Frame)
   layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
   layout.VerticalAlignment = Enum.VerticalAlignment.Top
   layout.SortOrder = Enum.SortOrder.LayoutOrder
-  layout.CellSize = UDim2.fromScale(1 / cols, 1 / rows)
+  do
+    local abs = gridFrame.AbsoluteSize
+    local cellPxX = math.max(1, math.ceil(abs.X / math.max(1, cols)))
+    local cellPxY = math.max(1, math.ceil(abs.Y / math.max(1, rows)))
+    local cellPx = math.min(cellPxX, cellPxY)
+    layout.CellSize = UDim2.fromOffset(cellPx, cellPx)
+  end
   layout.Parent = gridFrame
 
   local tiles = {} :: { Tile }
   local total = cols * rows
   tiles[total] = nil
 
-  for i = 1, total do
-    local f = Instance.new("Frame")
-    f.ZIndex = 1
-    f.BackgroundColor3 = theme.unloadedB
-    f.BorderSizePixel = 0
-    f.Name = string.format("Tile_%d", i)
-    f.LayoutOrder = i
+  local abs = gridFrame.AbsoluteSize
+  local baseW = math.max(1, math.floor(abs.X / math.max(1, cols)))
+  local baseH = math.max(1, math.floor(abs.Y / math.max(1, rows)))
+  local extraW = math.max(0, math.floor(abs.X - baseW * cols))
+  local extraH = math.max(0, math.floor(abs.Y - baseH * rows))
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(Theme.get().cornerRadius, 0)
-    corner.Parent = f
+  local function colWidth(c: number): number
+    return baseW + (if c <= extraW then 1 else 0)
+  end
+  local function rowHeight(r: number): number
+    return baseH + (if r <= extraH then 1 else 0)
+  end
 
-    local stroke = Instance.new("UIStroke")
-    stroke.Thickness = 1
-    stroke.Transparency = Theme.get().strokeTransparency
-    stroke.Color = theme.unloadedA:lerp(theme.bgColor, 0.5)
-    stroke.Parent = f
+  local y = 0
+  for r = 1, rows do
+    local h = rowHeight(r)
+    local x = 0
+    for c = 1, cols do
+      local w = colWidth(c)
 
-    f.Parent = gridFrame
-    local col = ((i - 1) % cols) + 1
-    local row = math.floor((i - 1) / cols) + 1
-    tiles[i] = { frame = f, stroke = stroke, corner = corner, col = col, row = row }
-    if i % 1200 == 0 then
-      task.wait()
+      local f = Instance.new("Frame")
+      f.ZIndex = 1
+      f.BackgroundColor3 = theme.unloadedB
+      f.BorderSizePixel = 0
+      f.Name = string.format("Tile_%d_%d", r, c)
+      f.Position = UDim2.fromOffset(x, y)
+      f.Size = UDim2.fromOffset(w, h)
+
+      local corner = Instance.new("UICorner")
+      corner.CornerRadius = UDim.new(Theme.get().cornerRadius, 0)
+      corner.Parent = f
+
+      local stroke = Instance.new("UIStroke")
+      stroke.Thickness = 1
+      stroke.Transparency = Theme.get().strokeTransparency
+      stroke.Color = theme.unloadedA:lerp(theme.bgColor, 0.5)
+      stroke.Parent = f
+
+      f.Parent = gridFrame
+      local i = (r - 1) * cols + c
+      tiles[i] = { frame = f, stroke = stroke, corner = corner, col = c, row = r }
+
+      x += w
+      if i % 1600 == 0 then
+        task.wait()
+      end
     end
+    y += h
   end
 
   s._tiles = tiles

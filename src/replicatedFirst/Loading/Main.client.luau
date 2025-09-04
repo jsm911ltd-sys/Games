@@ -4,7 +4,7 @@
 
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local RunService = game:GetService("RunService")
-local StarterGui = game:GetService("StarterGui")
+local CoreGuiManager = require(script.Parent.Util.CoreGuiManager)
 
 local Config = require(script.Parent.Core.Config)
 local Aggregator = require(script.Parent.Core.ProgressAggregator)
@@ -34,15 +34,8 @@ if not mounted then
   view = ViewVanilla.new()
   view:mount(playerGui)
 end
--- Hide default CoreGui (chat, player list, etc.) while loading
-pcall(function()
-  StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
-  -- Extra cores for topbar/dropdowns/notifications
-  StarterGui:SetCore("TopbarEnabled", false)
-  StarterGui:SetCore("BadgesNotificationsActive", false)
-  StarterGui:SetCore("PointsNotificationsActive", false)
-  StarterGui:SetCore("ResetButtonCallback", false)
-end)
+-- Hide select CoreGui elements (avoid toggling PlayerList to reduce selection spam)
+CoreGuiManager.apply()
 pcall(function()
   ReplicatedFirst:RemoveDefaultLoadingScreen()
 end)
@@ -58,14 +51,7 @@ agg:subscribe(function(p)
   view:setProgress(p)
 end)
 
--- Expose a minimal global for future wiring (safe, namespaced)
--- game:GetService("ReplicatedStorage") will exist, but avoid cross-deps here.
--- Developers can later set progress via _G if needed during bring-up.
-_G.__GamesLoader = {
-  setProgress = function(p: number)
-    agg:setProgress(p)
-  end,
-}
+-- Removed _G test hook for modularity/lint cleanliness
 
 -- Demo driver in Studio only, if enabled
 if Config.demo.enabled and RunService:IsStudio() then
@@ -82,14 +68,8 @@ if Config.demo.enabled and RunService:IsStudio() then
   end
   -- For step 1, simple fade-out; flip-wave will be added next step
   task.delay(0.1, function()
-    -- Re-enable default CoreGui
-    pcall(function()
-      StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
-      StarterGui:SetCore("TopbarEnabled", true)
-      StarterGui:SetCore("BadgesNotificationsActive", true)
-      StarterGui:SetCore("PointsNotificationsActive", true)
-      StarterGui:SetCore("ResetButtonCallback", true)
-    end)
+    -- Restore CoreGui
+    CoreGuiManager.restore()
     view:destroy()
   end)
 end
