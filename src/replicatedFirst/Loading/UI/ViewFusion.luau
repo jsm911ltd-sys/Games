@@ -15,7 +15,7 @@ export type View = {
   destroy: (self: View) -> (),
 }
 
-type Tile = { frame: Frame }
+type Tile = { frame: Frame, stroke: UIStroke }
 
 local ViewImpl = {}
 ViewImpl.__index = ViewImpl
@@ -69,6 +69,7 @@ function ViewImpl.new(): View
   s._statusLabel = nil :: TextLabel?
   s._progress = 0
   s._skipCb = nil :: (() -> ())?
+  s._lastLoaded = 0
   return s
 end
 
@@ -153,9 +154,9 @@ function ViewImpl:mount(parent: Instance)
     TextTransparency = 0.25,
     Font = Enum.Font.GothamMedium,
     TextSize = 14,
-    AnchorPoint = Vector2.new(1, 1),
-    Position = UDim2.fromScale(0.98, 0.98),
-    Size = UDim2.fromOffset(260, 36),
+    AnchorPoint = Vector2.new(0.5, 1),
+    Position = UDim2.fromScale(0.5, 0.98),
+    Size = UDim2.fromOffset(300, 40),
     Visible = false,
     ZIndex = 4,
     Parent = overlay,
@@ -249,7 +250,7 @@ function ViewImpl:_rebuildGridFusion(gridFrame: Frame)
     stroke.Parent = f
 
     f.Parent = gridFrame
-    tiles[i] = { frame = f }
+    tiles[i] = { frame = f, stroke = stroke }
   end
 
   s._tiles = tiles
@@ -272,26 +273,42 @@ function ViewImpl:setProgress(p: number)
   if not order or #order ~= total then
     order = nil
   end
-  if order then
-    for i = 1, total do
-      local f = tiles[i].frame
-      f.BackgroundColor3 = if i % 2 == 0 then theme.unloadedA else theme.unloadedB
-    end
-    for k = 1, loaded do
-      local idx = order[k]
-      local f = tiles[idx].frame
-      f.BackgroundColor3 = theme.primary
-    end
-  else
-    for i = 1, total do
-      local f = tiles[i].frame
-      if i <= loaded then
-        f.BackgroundColor3 = theme.primary
-      else
-        f.BackgroundColor3 = if i % 2 == 0 then theme.unloadedA else theme.unloadedB
+  local last = s._lastLoaded or 0
+  if last < 0 or last > total then
+    last = 0
+  end
+  if not order then
+    if loaded < last then
+      for i = loaded + 1, last do
+        local t = tiles[i]
+        t.frame.BackgroundTransparency = 0
+        t.frame.BackgroundColor3 = if i % 2 == 0 then theme.unloadedA else theme.unloadedB
+        t.stroke.Transparency = Theme.get().strokeTransparency
       end
     end
+    for i = last + 1, loaded do
+      local t = tiles[i]
+      t.frame.BackgroundTransparency = 1
+      t.stroke.Transparency = 1
+    end
+  else
+    if loaded < last then
+      for k = loaded + 1, last do
+        local idx = (order :: any)[k]
+        local t = tiles[idx]
+        t.frame.BackgroundTransparency = 0
+        t.frame.BackgroundColor3 = if idx % 2 == 0 then theme.unloadedA else theme.unloadedB
+        t.stroke.Transparency = Theme.get().strokeTransparency
+      end
+    end
+    for k = last + 1, loaded do
+      local idx = (order :: any)[k]
+      local t = tiles[idx]
+      t.frame.BackgroundTransparency = 1
+      t.stroke.Transparency = 1
+    end
   end
+  s._lastLoaded = loaded
 end
 
 function ViewImpl:setStatus(status: string)
