@@ -8,22 +8,16 @@ local RunService = game:GetService("RunService")
 local Config = require(script.Parent.Core.Config)
 local Aggregator = require(script.Parent.Core.ProgressAggregator)
 local ViewVanilla = require(script.Parent.UI.ViewVanilla)
-local ViewFusionModule = nil :: any
-pcall(function()
-  ViewFusionModule = require(script.Parent.UI.ViewFusion)
-end)
+local getFusion = require(script.Parent.Vendor.FusionFinder)
+local ViewFusionModule = require(script.Parent.UI.ViewFusion)
 
 -- Mount our UI first, then remove the default loader so there is no flash.
 local view
-if Config.useFusionView and ViewFusionModule ~= nil then
+if Config.useFusionView and getFusion() ~= nil then
   local ok, vf = pcall(function()
     return ViewFusionModule.new()
   end)
-  if ok and vf then
-    view = vf
-  else
-    view = ViewVanilla.new()
-  end
+  view = if ok and vf then vf else ViewVanilla.new()
 else
   view = ViewVanilla.new()
 end
@@ -31,7 +25,14 @@ end
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer or Players.PlayerAdded:Wait()
 local playerGui = player:WaitForChild("PlayerGui")
-view:mount(playerGui)
+local mounted = pcall(function()
+  view:mount(playerGui)
+end)
+if not mounted then
+  warn("Fusion mount failed; falling back to vanilla loader")
+  view = ViewVanilla.new()
+  view:mount(playerGui)
+end
 pcall(function()
   ReplicatedFirst:RemoveDefaultLoadingScreen()
 end)
