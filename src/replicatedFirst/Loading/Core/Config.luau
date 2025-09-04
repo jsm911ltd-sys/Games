@@ -34,6 +34,7 @@ export type Config = {
   grid: GridConfig,
   skip: SkipConfig,
   reducedMotionDefault: boolean,
+  useFusionView: boolean,
   demo: DemoConfig,
 }
 
@@ -76,6 +77,7 @@ local Config: Config = {
     confirm = false,
   },
   reducedMotionDefault = false,
+  useFusionView = true, -- try Fusion view when available; falls back to vanilla
   demo = {
     enabled = RunService:IsStudio(),
     durationSec = 6,

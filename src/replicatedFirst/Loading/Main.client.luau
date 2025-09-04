@@ -8,9 +8,25 @@ local RunService = game:GetService("RunService")
 local Config = require(script.Parent.Core.Config)
 local Aggregator = require(script.Parent.Core.ProgressAggregator)
 local ViewVanilla = require(script.Parent.UI.ViewVanilla)
+local ViewFusionModule = nil :: any
+pcall(function()
+  ViewFusionModule = require(script.Parent.UI.ViewFusion)
+end)
 
 -- Mount our UI first, then remove the default loader so there is no flash.
-local view = ViewVanilla.new()
+local view
+if Config.useFusionView and ViewFusionModule ~= nil then
+  local ok, vf = pcall(function()
+    return ViewFusionModule.new()
+  end)
+  if ok and vf then
+    view = vf
+  else
+    view = ViewVanilla.new()
+  end
+else
+  view = ViewVanilla.new()
+end
 -- Mount to PlayerGui for compatibility in live games
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer or Players.PlayerAdded:Wait()
