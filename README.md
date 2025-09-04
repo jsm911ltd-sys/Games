@@ -1,6 +1,6 @@
-Games – Roblox Dev Starter
+Games - Roblox Dev Starter
 
-Quick start
+Quick Start
 
 - Install tools (Rokit recommended):
   - Install Rokit, then run: `rokit install`
@@ -8,7 +8,7 @@ Quick start
 - Start Rojo server: `rokit run rojo serve default.project.json`
 - In Studio, use the Rojo plugin to connect to the server.
 
-What’s included
+What's Included
 
 - Rojo project mapping (`default.project.json`) for client, server, shared, and packages.
 - Wally dependencies with wrappers under `Packages/` and `ServerPackages/`.
@@ -16,17 +16,24 @@ What’s included
 - Formatting (`stylua.toml`) and lint config (`selene.toml`).
 - VS Code tasks and settings for sourcemaps and formatting.
 
+Project Layout
+
+- `src/client`: Client scripts. Entry at `src/client/init.client.luau` loads `Controllers` if present.
+- `src/server`: Server scripts. Entry at `src/server/init.server.luau` loads `Services` if present.
+- `src/shared`: Shared modules available to both client and server.
+- `src/replicatedFirst`: Reserved for first-load scripts; currently empty (no custom loader).
+- `Packages/` and `ServerPackages/`: Wally-installed dependencies (mapped via Rojo).
+
+Runtime Behavior
+
+- Default Roblox loading screen is used; no custom UI is mounted in `ReplicatedFirst`.
+- The Loader package auto-loads descendants under `Controllers` (client) and `Services` (server) if those folders exist.
+
 Notes
 
 - Fusion is installed and ready via `game.ReplicatedStorage.Packages.Fusion`.
 - Server packages are mapped to `ServerStorage.ServerPackages` (safe from auto-execution).
-- ReplicatedFirst no longer overrides the default Roblox loading screen.
 
-Modular loader architecture
+Troubleshooting
 
-- Entry: `src/replicatedFirst/Loading/Main.client.luau` mounts a view via `UI/ViewFactory.luau` and wires a simple `Core/ProgressAggregator`.
-- Views: `UI/ViewVanilla.luau` and `UI/ViewFusion.luau` both depend on the same shared components.
-- Shared UI components: `UI/Components/` contains `GridBuilder`, `SkipButton`, and `StatusLabel`.
-- Styling helpers: `UI/TileStyler.luau`, `UI/GradientUtil.luau`, `UI/NoiseUtil.luau`, and theme in `UI/Theme.luau`.
-- Layout helpers: `Util/GridMath.luau` and blue-noise fill order in `Util/FillOrder.luau`.
-- System toggles: `Core/Config.luau` controls theme, grid caps, and view selection.
+- Loader wrapper name: If `Loader` is not found under `ReplicatedStorage.Packages`, ensure Wally installed wrappers exist as either `Loader` or `loader` to match `wally.toml`.
