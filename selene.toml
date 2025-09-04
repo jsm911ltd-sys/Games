@@ -1,10 +1,5 @@
 std = "roblox+luau"
 
-[lints]
-unused_variable     = "allow"  # Selene stays quiet; Luau still reports if you want it
-unscoped_variables  = "deny"   # forbid accidental globals
-shadowing           = "warn"
-
 # Exclude vendored Wally packages to avoid duplicate/ noisy diagnostics
 exclude = [
   "Packages/**",
@@ -12,3 +7,8 @@ exclude = [
   "DevPackages/**",
   "_tmp_Fusion/**",
 ]
+
+[lints]
+unused_variable     = "allow"  # Selene stays quiet; Luau still reports if you want it
+unscoped_variables  = "deny"   # forbid accidental globals
+shadowing           = "warn"

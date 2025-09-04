@@ -7,7 +7,9 @@ local Packages = ReplicatedStorage:WaitForChild("Packages")
 -- Your dependency key is "loader", so the wrapper is likely "loader" not "Loader".
 local loaderModule = Packages:FindFirstChild("Loader") or Packages:FindFirstChild("loader")
 if not loaderModule then
-    error("Loader package not found under ReplicatedStorage.Packages (expected 'Loader' or 'loader'). Did you run 'wally install' and connect Rojo?")
+  error(
+    "Loader package not found under ReplicatedStorage.Packages (expected 'Loader' or 'loader'). Did you run 'wally install' and connect Rojo?"
+  )
 end
 local Loader = require(loaderModule)
 
@@ -16,7 +18,7 @@ local Loader = require(loaderModule)
 local root = script.Parent
 local services = root:FindFirstChild("Services")
 if services then
-    Loader.LoadDescendants(services)
+  Loader.LoadDescendants(services)
 else
-    Loader.LoadDescendants(root)
+  Loader.LoadDescendants(root)
 end

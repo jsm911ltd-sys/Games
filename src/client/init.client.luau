@@ -5,7 +5,9 @@ local Packages = ReplicatedStorage:WaitForChild("Packages")
 -- Wrapper name matches the dependency key in wally.toml (case-sensitive).
 local loaderModule = Packages:FindFirstChild("Loader") or Packages:FindFirstChild("loader")
 if not loaderModule then
-  error("Loader package not found under ReplicatedStorage.Packages (expected 'Loader' or 'loader'). Did you run 'wally install' and connect Rojo?")
+  error(
+    "Loader package not found under ReplicatedStorage.Packages (expected 'Loader' or 'loader'). Did you run 'wally install' and connect Rojo?"
+  )
 end
 local Loader = require(loaderModule)
 

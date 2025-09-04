@@ -5,7 +5,5 @@ quote_style = "AutoPreferDouble"
 call_parentheses = "Always"
 collapse_simple_statement = "Never"
 
-# Roblox/Luau compatibility
-lua_version = "5.1"
-roblox = true
-
+# Roblox/Luau compatibility for Stylua >= 0.18
+syntax = "Luau"
