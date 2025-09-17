@@ -16,10 +16,6 @@ What's Included
 - Formatting (`stylua.toml`) and lint config (`selene.toml`).
 - VS Code tasks and settings for sourcemaps and formatting.
 
-Planning & Roadmap
-
-- Stepping Platforms feature plan: `docs/SteppingPlatformsPlan.md` (milestones, acceptance criteria, and progress log).
-
 Project Layout
 
 - `src/client`: Client scripts. Entry at `src/client/init.client.luau` loads `Controllers` if present.
